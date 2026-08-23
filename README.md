@@ -1,1 +1,127 @@
-# kalp
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Kalp Animasyonu</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050505;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="heartCanvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('heartCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let width, height, centerX, centerY, baseScale;
+  const totalSteps = 90; // Çizgi yoğunluğu
+  let currentStep = 0;
+  
+  // Kalp atışı için değişkenler
+  let pulseAngle = 0;
+  let isDrawComplete = false;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+
+    ctx.scale(dpr, dpr);
+
+    centerX = width / 2;
+    centerY = height / 2 + (height * 0.03);
+    
+    const minDim = Math.min(width, height);
+    baseScale = minDim / 42;
+  }
+
+  function drawHeart(currentScale) {
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = 0; i < currentStep; i++) {
+      const t = (i / totalSteps) * Math.PI * 2;
+
+      // Parametrik Kalp Formülü
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+
+      const targetX = centerX + x * currentScale;
+      const targetY = centerY + y * currentScale;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(targetX, targetY);
+      ctx.strokeStyle = '#ff2a8d';
+      ctx.lineWidth = Math.max(1.2, currentScale / 12);
+      ctx.shadowBlur = 12 + (currentScale - baseScale) * 2; // Atış sırasında parlamayı da dinamik yap
+      ctx.shadowColor = '#ff2a8d';
+      ctx.stroke();
+    }
+  }
+
+  function render() {
+    let currentScale = baseScale;
+
+    // Çizim tamamlandıktan sonra kalp atışı efektini devreye sok
+    if (isDrawComplete) {
+      pulseAngle += 0.05; // Atış hızı
+      // Senkronize büyüyüp küçülme faktörü
+      const pulseFactor = Math.sin(pulseAngle) * 0.08; 
+      currentScale = baseScale * (1 + pulseFactor);
+    }
+
+    drawHeart(currentScale);
+
+    // Çizim aşaması devam ediyorsa
+    if (!isDrawComplete) {
+      if (currentStep < totalSteps) {
+        currentStep++;
+        setTimeout(() => {
+          requestAnimationFrame(render);
+        }, 55); // Çizim yavaşlatıldı (MS cinsinden gecikme)
+      } else {
+        isDrawComplete = true;
+        requestAnimationFrame(render);
+      }
+    } else {
+      // Çizim bittiğinde kesintisiz kalp atışı döngüsü
+      requestAnimationFrame(render);
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    resize();
+  });
+  
+  // Başlat
+  resize();
+  render();
+</script>
+
+</body>
+</html>
